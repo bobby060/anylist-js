@@ -16,7 +16,8 @@
   "license": "MIT",
   "author": "Max Isom <hi@maxisom.me> (https://maxisom.me/)",
   "scripts": {
-    "test": "xo",
+    "test": "mocha 'test/**/*.test.js'",
+    "lint": "xo",
     "lint-fix": "xo --fix",
     "document": "documentation build lib/index.js -f html -o docs"
   },
@@ -30,18 +31,21 @@
     "ws": "^7.2.1"
   },
   "devDependencies": {
+    "chai": "^6.2.2",
     "documentation": "^12.1.4",
     "husky": "^4.3.8",
+    "mocha": "^11.7.5",
     "xo": "^0.56.0"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn test && yarn run document"
+      "pre-commit": "yarn lint && yarn run document"
     }
   },
   "xo": {
     "ignores": [
-      "docs"
+      "docs",
+      "test"
     ],
     "rules": {
       "unicorn/prefer-module": "off",
