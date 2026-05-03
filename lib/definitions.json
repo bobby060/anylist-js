@@ -95,6 +95,12 @@
           "id": 41
         },
         {
+          "rule": "optional",
+          "type": "string",
+          "name": "locale",
+          "id": 44
+        },
+        {
           "rule": "repeated",
           "type": "string",
           "name": "orderedStarterListIds",
@@ -284,6 +290,30 @@
           "type": "string",
           "name": "imageName",
           "id": 8
+        },
+        {
+          "rule": "repeated",
+          "type": "PBValue",
+          "name": "localizedDisplayNames",
+          "id": 9
+        },
+        {
+          "rule": "repeated",
+          "type": "PBValue",
+          "name": "localizedSearchTerms",
+          "id": 10
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "exclusiveLocales",
+          "id": 11
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "excludedLocales",
+          "id": 12
         },
         {
           "rule": "repeated",
@@ -2246,6 +2276,14 @@
               "id": 5
             },
             {
+              "name": "DatePreparedSortOrder",
+              "id": 7
+            },
+            {
+              "name": "TimesPreparedSortOrder",
+              "id": 8
+            },
+            {
               "name": "RecipeCountSortOrder",
               "id": 6
             }
@@ -2707,6 +2745,41 @@
       ]
     },
     {
+      "name": "PBCalendarEventListItem",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "identifier",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "name",
+          "id": 2
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "details",
+          "id": 3
+        },
+        {
+          "rule": "optional",
+          "type": "PBItemQuantity",
+          "name": "quantityPb",
+          "id": 4
+        },
+        {
+          "rule": "optional",
+          "type": "PBItemPackageSize",
+          "name": "packageSizePb",
+          "id": 5
+        }
+      ]
+    },
+    {
       "name": "PBCalendarEvent",
       "fields": [
         {
@@ -2729,9 +2802,9 @@
         },
         {
           "rule": "optional",
-          "type": "string",
-          "name": "date",
-          "id": 4
+          "type": "int32",
+          "name": "eventType",
+          "id": 12
         },
         {
           "rule": "optional",
@@ -2747,6 +2820,12 @@
         },
         {
           "rule": "optional",
+          "type": "PBIcon",
+          "name": "icon",
+          "id": 16
+        },
+        {
+          "rule": "optional",
           "type": "string",
           "name": "recipeId",
           "id": 7
@@ -2756,6 +2835,12 @@
           "type": "string",
           "name": "labelId",
           "id": 8
+        },
+        {
+          "rule": "optional",
+          "type": "bool",
+          "name": "isLeftover",
+          "id": 17
         },
         {
           "rule": "optional",
@@ -2774,6 +2859,47 @@
           "type": "double",
           "name": "recipeScaleFactor",
           "id": 10
+        },
+        {
+          "rule": "repeated",
+          "type": "PBCalendarEventListItem",
+          "name": "eventListItems",
+          "id": 15
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "date",
+          "id": 4
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "templateId",
+          "id": 13
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "templateDayId",
+          "id": 14
+        }
+      ]
+    },
+    {
+      "name": "PBCalendarEventDescriptor",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "eventId",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "eventType",
+          "id": 2
         }
       ]
     },
@@ -2819,6 +2945,181 @@
       ]
     },
     {
+      "name": "PBMealPlanTemplate",
+      "fields": [
+        {
+          "rule": "required",
+          "type": "string",
+          "name": "identifier",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "uint64",
+          "name": "logicalTimestamp",
+          "id": 2
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "calendarId",
+          "id": 3
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "name",
+          "id": 4
+        },
+        {
+          "rule": "optional",
+          "type": "PBIcon",
+          "name": "icon",
+          "id": 7
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "dayIds",
+          "id": 5
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "sortIndex",
+          "id": 6
+        }
+      ]
+    },
+    {
+      "name": "PBMealPlanTemplateGroup",
+      "fields": [
+        {
+          "rule": "required",
+          "type": "string",
+          "name": "identifier",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "uint64",
+          "name": "logicalTimestamp",
+          "id": 2
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "calendarId",
+          "id": 3
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "name",
+          "id": 4
+        },
+        {
+          "rule": "repeated",
+          "type": "PBMealPlanTemplateGroupItem",
+          "name": "items",
+          "id": 5
+        },
+        {
+          "rule": "optional",
+          "type": "PBMealPlanTemplateGroupSettings",
+          "name": "groupSettings",
+          "id": 6
+        }
+      ]
+    },
+    {
+      "name": "PBMealPlanTemplateGroupItem",
+      "fields": [
+        {
+          "rule": "required",
+          "type": "string",
+          "name": "identifier",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "itemType",
+          "id": 2
+        }
+      ],
+      "enums": [
+        {
+          "name": "Type",
+          "values": [
+            {
+              "name": "Template",
+              "id": 0
+            },
+            {
+              "name": "Group",
+              "id": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PBMealPlanTemplateGroupSettings",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "itemsSortOrder",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "groupsSortPosition",
+          "id": 2
+        },
+        {
+          "rule": "optional",
+          "type": "PBIcon",
+          "name": "icon",
+          "id": 3
+        }
+      ],
+      "enums": [
+        {
+          "name": "SortOrder",
+          "values": [
+            {
+              "name": "Manual",
+              "id": 0
+            },
+            {
+              "name": "Alphabetical",
+              "id": 1
+            }
+          ]
+        },
+        {
+          "name": "GroupsSortPosition",
+          "values": [
+            {
+              "name": "AfterTemplates",
+              "id": 0
+            },
+            {
+              "name": "BeforeTemplates",
+              "id": 1
+            },
+            {
+              "name": "WithTemplates",
+              "id": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "PBCalendarResponse",
       "fields": [
         {
@@ -2838,6 +3139,12 @@
           "type": "uint64",
           "name": "logicalTimestamp",
           "id": 3
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "responseVersion",
+          "id": 12
         },
         {
           "rule": "repeated",
@@ -2862,6 +3169,42 @@
           "type": "string",
           "name": "deletedLabelIds",
           "id": 7
+        },
+        {
+          "rule": "repeated",
+          "type": "PBMealPlanTemplate",
+          "name": "templates",
+          "id": 8
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "deletedTemplateIds",
+          "id": 9
+        },
+        {
+          "rule": "repeated",
+          "type": "PBCalendarEvent",
+          "name": "templateEvents",
+          "id": 10
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "deletedTemplateEventIds",
+          "id": 11
+        },
+        {
+          "rule": "repeated",
+          "type": "PBMealPlanTemplateGroup",
+          "name": "templateGroups",
+          "id": 13
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "deletedTemplateGroupIds",
+          "id": 14
         }
       ]
     },
@@ -2894,6 +3237,12 @@
         },
         {
           "rule": "optional",
+          "type": "int32",
+          "name": "eventType",
+          "id": 11
+        },
+        {
+          "rule": "optional",
           "type": "PBCalendarLabel",
           "name": "updatedLabel",
           "id": 5
@@ -2909,6 +3258,24 @@
           "type": "string",
           "name": "sortedLabelIds",
           "id": 7
+        },
+        {
+          "rule": "optional",
+          "type": "PBCalendarEventListItem",
+          "name": "updatedEventListItem",
+          "id": 19
+        },
+        {
+          "rule": "optional",
+          "type": "PBCalendarEventListItem",
+          "name": "originalEventListItem",
+          "id": 20
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "orderedEventListItemIds",
+          "id": 21
         },
         {
           "rule": "repeated",
@@ -2927,6 +3294,48 @@
           "type": "PBCalendarEvent",
           "name": "originalEvents",
           "id": 10
+        },
+        {
+          "rule": "optional",
+          "type": "PBMealPlanTemplate",
+          "name": "updatedTemplate",
+          "id": 12
+        },
+        {
+          "rule": "optional",
+          "type": "PBMealPlanTemplate",
+          "name": "originalTemplate",
+          "id": 13
+        },
+        {
+          "rule": "repeated",
+          "type": "string",
+          "name": "templateIds",
+          "id": 14
+        },
+        {
+          "rule": "optional",
+          "type": "PBMealPlanTemplateGroup",
+          "name": "templateGroup",
+          "id": 15
+        },
+        {
+          "rule": "repeated",
+          "type": "PBMealPlanTemplateGroupItem",
+          "name": "templateGroupItems",
+          "id": 16
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "originalParentTemplateGroupId",
+          "id": 17
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "updatedParentTemplateGroupId",
+          "id": 18
         }
       ]
     },
@@ -3065,6 +3474,12 @@
           "type": "int32",
           "name": "operationClass",
           "id": 4
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "operationVersion",
+          "id": 5
         }
       ],
       "enums": [
@@ -4093,12 +4508,6 @@
         },
         {
           "rule": "optional",
-          "type": "int32",
-          "name": "webSelectedMealPlanTab",
-          "id": 17
-        },
-        {
-          "rule": "optional",
           "type": "bool",
           "name": "webHasHiddenStoresAndFiltersHelp",
           "id": 18
@@ -4132,6 +4541,54 @@
           "type": "int32",
           "name": "webSelectedRecipeCollectionType",
           "id": 40
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webRecipeCollectionLayoutStyle",
+          "id": 48
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webSelectedMealPlanTab",
+          "id": 49
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webMealPlanCalendarLayout",
+          "id": 50
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webMealPlanMonthEventListType",
+          "id": 51
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webMealPlanWeekEventListType",
+          "id": 52
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webMealPlanNotesSortOrder",
+          "id": 53
+        },
+        {
+          "rule": "optional",
+          "type": "bool",
+          "name": "webMealPlanAddEntriesScreenPinnedEntriesCollapsed",
+          "id": 54
+        },
+        {
+          "rule": "optional",
+          "type": "bool",
+          "name": "webMealPlanAddEntriesScreenQueueEntriesCollapsed",
+          "id": 55
         },
         {
           "rule": "repeated",
@@ -4206,6 +4663,12 @@
           "id": 42
         },
         {
+          "rule": "optional",
+          "type": "int32",
+          "name": "mealPlanWeekStartDay",
+          "id": 47
+        },
+        {
           "rule": "repeated",
           "type": "PBAlexaList",
           "name": "unlinkedAlexaLists",
@@ -4258,6 +4721,12 @@
           "type": "bool",
           "name": "isActiveGoogleAssistantProvider",
           "id": 35
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "webSelectedMealPlanTabDeprecated",
+          "id": 17
         }
       ],
       "enums": [
@@ -4348,6 +4817,13 @@
           "type": "double",
           "name": "maxUserCreationTime",
           "id": 11
+        },
+        {
+          "rule": "map",
+          "type": "PBAppNotice",
+          "keytype": "string",
+          "name": "localizedNotices",
+          "id": 12
         }
       ]
     },
@@ -4698,6 +5174,23 @@
           "type": "PBLogicalTimestamp",
           "name": "timestamps",
           "id": 1
+        }
+      ]
+    },
+    {
+      "name": "PBDataRequestClientInfo",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "processedResponseVersion",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "supportedResponseVersion",
+          "id": 2
         }
       ]
     },
@@ -5580,6 +6073,17 @@
       ]
     },
     {
+      "name": "PBUserDataClientInfo",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "PBDataRequestClientInfo",
+          "name": "mealPlanningCalendarClientInfo",
+          "id": 1
+        }
+      ]
+    },
+    {
       "name": "PBUserDataResponse",
       "fields": [
         {
@@ -6129,6 +6633,12 @@
           "type": "string",
           "name": "alexaApiEndpoint",
           "id": 11
+        },
+        {
+          "rule": "optional",
+          "type": "bool",
+          "name": "didHearWelcomeMessage",
+          "id": 12
         }
       ]
     },
@@ -6539,6 +7049,105 @@
           "type": "ListItem",
           "name": "listItem",
           "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "productThumbnailUrl",
+          "id": 2
+        }
+      ]
+    },
+    {
+      "name": "PBRetailProductSubmission",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "identifier",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "double",
+          "name": "timestamp",
+          "id": 2
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "userId",
+          "id": 3
+        },
+        {
+          "rule": "optional",
+          "type": "double",
+          "name": "submissionTimestamp",
+          "id": 4
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "productUpc",
+          "id": 5
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "productName",
+          "id": 6
+        },
+        {
+          "rule": "optional",
+          "type": "PBItemPackageSize",
+          "name": "productPackageSize",
+          "id": 7
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "productRootTag",
+          "id": 8
+        },
+        {
+          "rule": "optional",
+          "type": "int32",
+          "name": "submissionStatus",
+          "id": 9
+        }
+      ],
+      "enums": [
+        {
+          "name": "SubmissionStatus",
+          "values": [
+            {
+              "name": "Submitted",
+              "id": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "name": "PBCalendarEventType",
+      "values": [
+        {
+          "name": "MealPlanCalendarEvent",
+          "id": 0
+        },
+        {
+          "name": "MealPlanQueueEvent",
+          "id": 1
+        },
+        {
+          "name": "MealPlanTemplateEvent",
+          "id": 2
+        },
+        {
+          "name": "MealPlanFavoriteEvent",
+          "id": 3
         }
       ]
     }
