@@ -107,6 +107,38 @@ any.login().then(async () => {
 ```
 
 
+### Adding a Photo to a Recipe
+
+`uploadPhoto` stores JPEG bytes and returns the ID they were stored under. Assign
+that ID to the recipe's `photoIds` and save:
+
+```javascript
+const fs = require('fs');
+const AnyList = require('anylist');
+
+const any = new AnyList({email: 'hi@here.com', password: 'password'});
+
+any.login().then(async () => {
+    const recipes = await any.getRecipes();
+    const recipe = recipes.find(r => r.name === 'Congee recipe');
+
+    const photoId = await any.uploadPhoto(fs.readFileSync('congee.jpg'));
+
+    recipe.photoIds = [photoId];
+    await recipe.save();
+
+    any.teardown();
+});
+```
+
+Photos are served at `https://photos.anylist.com/<id>.jpg`. That bucket is public,
+so anyone who knows an ID can fetch the photo it points at.
+
+Two things to know about the upload endpoint: it re-encodes the image, so the stored
+photo is usually smaller than the bytes you sent, and it answers `200` even when it
+stored nothing at all. A resolved promise is therefore not proof the photo is
+retrievable — fetch the URL above if you need to be sure.
+
 ### Persistent Credentials Storage
 By default, the client ID and authentications tokens are encrypted with AES-256 encryption using your account password and then stored to disk. The default storage location is the `.anylist_credentials` file in the user home directory. If you wish to change the storage location, set the `credentialsFile` parameter of the `AnyList` constructor to the desired path. If you wish to disable persistent credentials storage, set the `credentialsFile` parameter to `null`.
 
