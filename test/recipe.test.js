@@ -1,0 +1,139 @@
+const { expect } = require('chai');
+const { getAuthenticatedClient } = require('./helpers');
+
+describe('Recipe Integration Tests', function() {
+	this.timeout(30000); // API calls can be slow
+
+	let client;
+
+	before(async function() {
+		client = await getAuthenticatedClient();
+
+		// One-time sweep for orphaned fixtures left by a previous crashed run.
+		// Free — getAuthenticatedClient() already fetched the full account via getLists().
+		const orphans = (await client.getRecipes(false)).filter(r =>
+			r.name && r.name.startsWith('TEST_Recipe_')
+		);
+		for (const recipe of orphans) {
+			await recipe.delete();
+		}
+	});
+
+	afterEach(async function() {
+		// client.recipes is kept correct by save()/delete() — no refetch needed to clean up.
+		const testRecipes = client.recipes.filter(r =>
+			r.name && r.name.startsWith('TEST_Recipe_')
+		);
+		for (const recipe of testRecipes) {
+			await recipe.delete();
+		}
+	});
+
+	describe('creating recipes', function() {
+		it('should create a recipe and reflect it in a cached read', async function() {
+			const name = `TEST_Recipe_${Date.now()}`;
+			const recipe = await client.createRecipe({ name });
+			await recipe.save();
+
+			const recipes = await client.getRecipes(false);
+			const found = recipes.find(r => r.identifier === recipe.identifier);
+
+			expect(found).to.exist;
+			expect(found.name).to.equal(name);
+		});
+
+		it('should persist the new recipe for a fresh client', async function() {
+			const name = `TEST_Recipe_${Date.now()}`;
+			const recipe = await client.createRecipe({ name });
+			await recipe.save();
+
+			const freshClient = await getAuthenticatedClient();
+			await freshClient.getRecipes(true);
+			const found = freshClient.recipes.find(r => r.name === name);
+
+			expect(found).to.exist;
+		});
+	});
+
+	describe('updating recipes', function() {
+		it('should update a recipe and reflect it in a cached read', async function() {
+			const name = `TEST_Recipe_${Date.now()}`;
+			const recipe = await client.createRecipe({ name, note: 'original note' });
+			await recipe.save();
+
+			recipe.note = 'updated note';
+			await recipe.save();
+
+			const recipes = await client.getRecipes(false);
+			const found = recipes.find(r => r.identifier === recipe.identifier);
+
+			expect(found).to.exist;
+			expect(found.note).to.equal('updated note');
+			// Only one recipe should exist for this identifier — save() must replace, not duplicate
+			expect(recipes.filter(r => r.identifier === recipe.identifier)).to.have.lengthOf(1);
+		});
+
+		it('should keep the same identifier when renaming', async function() {
+			const name = `TEST_Recipe_${Date.now()}`;
+			const recipe = await client.createRecipe({ name });
+			await recipe.save();
+			const originalId = recipe.identifier;
+
+			recipe.name = `TEST_Recipe_${Date.now()}_renamed`;
+			await recipe.save();
+
+			const recipes = await client.getRecipes(false);
+			const found = recipes.find(r => r.identifier === originalId);
+
+			expect(found).to.exist;
+			expect(found.name).to.equal(recipe.name);
+		});
+	});
+
+	describe('deleting recipes', function() {
+		it('should delete a recipe and reflect removal in a cached read', async function() {
+			const name = `TEST_Recipe_${Date.now()}`;
+			const recipe = await client.createRecipe({ name });
+			await recipe.save();
+
+			await recipe.delete();
+
+			const recipes = await client.getRecipes(false);
+			expect(recipes.find(r => r.identifier === recipe.identifier)).to.be.undefined;
+		});
+	});
+
+	describe('cache contract', function() {
+		it('should not trigger any full-account fetch after the initial warm-up', async function() {
+			const original = client._getUserData.bind(client);
+			let refreshes = 0;
+			client._getUserData = async refresh => {
+				if (refresh) refreshes++;
+				return original(refresh);
+			};
+
+			try {
+				const name = `TEST_Recipe_${Date.now()}`;
+				const recipe = await client.createRecipe({ name });
+				await recipe.save();
+
+				await client.getRecipes(false);
+
+				recipe.note = 'updated note';
+				await recipe.save();
+
+				await client.getRecipes(false);
+
+				await recipe.delete();
+
+				await client.getRecipes(false);
+
+				// By this point in the suite the cache is already warm, so this whole
+				// create/update/delete/read sequence should cost zero network calls.
+				expect(refreshes).to.equal(0);
+			} finally {
+				client._getUserData = original;
+			}
+		});
+	});
+});
