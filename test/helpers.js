@@ -24,7 +24,7 @@ async function getAuthenticatedClient() {
 /**
  * Find or create a test list for running tests against.
  */
-async function getTestList(client, listName = 'Integration Test List') {
+async function getTestList(client, listName = process.env.ANYLIST_LIST_NAME || 'Integration Test List') {
 	let list = client.lists.find(l => l.name === listName);
 
 	if (!list) {
