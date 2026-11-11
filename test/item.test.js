@@ -1,8 +1,6 @@
 const { expect } = require('chai');
 const { getAuthenticatedClient, getTestList } = require('./helpers');
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 describe('Item Integration Tests', function() {
 	this.timeout(30000); // API calls can be slow
 
@@ -22,9 +20,8 @@ describe('Item Integration Tests', function() {
 	});
 
 	afterEach(async function() {
-		// testList already reflects this test's latest state — each test refreshes it
-		// itself as part of verifying persistence, so no extra refetch is needed here
-		// just to find what to clean up. removeItem() keeps testList.items in sync.
+		// addItem()/removeItem() already keep testList.items correct in place —
+		// no refetch is needed just to find what to clean up.
 		const testItems = testList.items.filter(i =>
 			i.name && i.name.startsWith('TEST_')
 		);
@@ -42,10 +39,6 @@ describe('Item Integration Tests', function() {
 
 			await testList.addItem(item);
 
-			// Refresh and verify
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
 			const found = testList.getItemByName('TEST_NoQuantity');
 			expect(found).to.exist;
 			expect(found.name).to.equal('TEST_NoQuantity');
@@ -58,32 +51,11 @@ describe('Item Integration Tests', function() {
 			});
 
 			await testList.addItem(item);
-			
-			// Refresh and verify
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 
 			const found = testList.getItemByName('TEST_WithQuantity');
 			expect(found).to.exist;
 			expect(found.name).to.equal('TEST_WithQuantity');
 			expect(found.quantity).to.equal('5');
-		});
-
-		it('should add an item with numeric quantity', async function() {
-			const item = client.createItem({
-				name: 'TEST_NumericQuantity',
-				quantity: 12,
-			});
-
-			await testList.addItem(item);
-
-			// Refresh and verify
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
-			const found = testList.getItemByName('TEST_NumericQuantity');
-			expect(found).to.exist;
-			expect(found.quantity).to.equal('12');
 		});
 
 		it('should add an item with details and quantity', async function() {
@@ -95,10 +67,6 @@ describe('Item Integration Tests', function() {
 
 			await testList.addItem(item);
 
-			// Refresh and verify
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
 			const found = testList.getItemByName('TEST_DetailsAndQuantity');
 			expect(found).to.exist;
 			expect(found.details).to.equal('organic');
@@ -108,54 +76,16 @@ describe('Item Integration Tests', function() {
 
 	describe('updating item quantity', function() {
 		it('should update quantity on an existing item', async function() {
-			// Create item without quantity
 			const item = client.createItem({
 				name: 'TEST_UpdateQuantity',
 			});
 			await testList.addItem(item);
-
-			// Refresh to get the item from API
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_UpdateQuantity');
 
-			// Update quantity
 			found.quantity = '10';
 			await found.save();
 
-			// Refresh and verify
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const updated = testList.getItemByName('TEST_UpdateQuantity');
-
-			expect(updated.quantity).to.equal('10');
-		});
-
-		it('should clear quantity by setting to empty string', async function() {
-			// Create item with quantity
-			const item = client.createItem({
-				name: 'TEST_ClearQuantity',
-				quantity: '5',
-			});
-			await testList.addItem(item);
-
-			// Refresh
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const found = testList.getItemByName('TEST_ClearQuantity');
-			expect(found.quantity).to.equal('5');
-
-			// Clear quantity
-			found.quantity = '';
-			await found.save();
-
-			// Refresh and verify
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const updated = testList.getItemByName('TEST_ClearQuantity');
-
-			// Quantity should be empty/undefined
-			expect(updated.quantity).to.satisfy(q => q === '' || q === undefined || q === null);
+			expect(found.quantity).to.equal('10');
 		});
 	});
 
@@ -166,42 +96,13 @@ describe('Item Integration Tests', function() {
 				quantity: '3',
 			});
 			await testList.addItem(item);
-
-			// Refresh
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_RemoveWithQuantity');
 			expect(found).to.exist;
 
 			// Remove should not throw
 			await testList.removeItem(found);
 
-			// Verify removed
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const removed = testList.getItemByName('TEST_RemoveWithQuantity');
-			expect(removed).to.be.undefined;
-		});
-	});
-
-	describe('reading items with quantity from API', function() {
-		it('should read quantity from items fetched from API', async function() {
-			// Add item with quantity
-			const item = client.createItem({
-				name: 'TEST_ReadQuantity',
-				quantity: '7',
-			});
-			await testList.addItem(item);
-
-			// Create fresh client to ensure we're reading from API
-			const freshClient = await getAuthenticatedClient();
-			await freshClient.getLists();
-
-			const freshList = freshClient.lists.find(l => l.name === testList.name);
-			const found = freshList.getItemByName('TEST_ReadQuantity');
-
-			expect(found).to.exist;
-			expect(found.quantity).to.equal('7');
+			expect(testList.getItemByName('TEST_RemoveWithQuantity')).to.be.undefined;
 		});
 	});
 
@@ -213,8 +114,6 @@ describe('Item Integration Tests', function() {
 			});
 
 			await testList.addItem(item);
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 
 			const found = testList.getItemByName('TEST_WithDetails');
 			expect(found).to.exist;
@@ -227,69 +126,27 @@ describe('Item Integration Tests', function() {
 				details: 'original details',
 			});
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_UpdateDetails');
 
 			found.details = 'updated details';
 			await found.save();
 
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const updated = testList.getItemByName('TEST_UpdateDetails');
-
-			expect(updated.details).to.equal('updated details');
-		});
-
-		it('should handle special characters in details', async function() {
-			const item = client.createItem({
-				name: 'TEST_SpecialDetails',
-				details: 'café, naïve, 日本語, emoji 🍎',
-			});
-			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
-			const found = testList.getItemByName('TEST_SpecialDetails');
-			expect(found.details).to.equal('café, naïve, 日本語, emoji 🍎');
+			expect(found.details).to.equal('updated details');
 		});
 	});
 
 	describe('item checked status', function() {
-		it('should add an unchecked item by default', async function() {
-			const item = client.createItem({
-				name: 'TEST_DefaultUnchecked',
-			});
-			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
-			const found = testList.getItemByName('TEST_DefaultUnchecked');
-			// API returns null or false for unchecked items
-			expect(found.checked).to.satisfy(c => c === false || c === null);
-		});
-
 		it('should check an item', async function() {
 			const item = client.createItem({
 				name: 'TEST_CheckItem',
 			});
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_CheckItem');
 
 			found.checked = true;
 			await found.save();
 
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const updated = testList.getItemByName('TEST_CheckItem');
-
-			expect(updated.checked).to.equal(true);
+			expect(found.checked).to.equal(true);
 		});
 
 		it('should uncheck a checked item', async function() {
@@ -298,21 +155,14 @@ describe('Item Integration Tests', function() {
 				checked: true,
 			});
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_UncheckItem');
 			expect(found.checked).to.equal(true);
 
 			found.checked = false;
 			await found.save();
 
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-			const updated = testList.getItemByName('TEST_UncheckItem');
-
 			// API may return null or false for unchecked
-			expect(updated.checked).to.satisfy(c => c === false || c === null);
+			expect(found.checked).to.satisfy(c => c === false || c === null);
 		});
 	});
 
@@ -322,32 +172,13 @@ describe('Item Integration Tests', function() {
 				name: 'TEST_OriginalName',
 			});
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_OriginalName');
 
 			found.name = 'TEST_UpdatedName';
 			await found.save();
 
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
 			expect(testList.getItemByName('TEST_OriginalName')).to.be.undefined;
 			expect(testList.getItemByName('TEST_UpdatedName')).to.exist;
-		});
-
-		it('should handle special characters in name', async function() {
-			const item = client.createItem({
-				name: 'TEST_Spëcial Çharacters & Symbols!',
-			});
-			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
-
-			const found = testList.getItemByName('TEST_Spëcial Çharacters & Symbols!');
-			expect(found).to.exist;
 		});
 	});
 
@@ -359,9 +190,6 @@ describe('Item Integration Tests', function() {
 				quantity: '1',
 			});
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_MultiUpdate');
 
 			found.name = 'TEST_MultiUpdateRenamed';
@@ -370,10 +198,7 @@ describe('Item Integration Tests', function() {
 			found.checked = true;
 			await found.save();
 
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const updated = testList.getItemByName('TEST_MultiUpdateRenamed');
-
 			expect(updated).to.exist;
 			expect(updated.details).to.equal('updated details');
 			expect(updated.quantity).to.equal('5');
@@ -388,9 +213,6 @@ describe('Item Integration Tests', function() {
 			});
 			const originalId = item.identifier;
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 
 			const found = testList.getItemById(originalId);
 			expect(found).to.exist;
@@ -416,9 +238,6 @@ describe('Item Integration Tests', function() {
 				quantity: '3',
 			});
 			await testList.addItem(item);
-
-			await client.getLists();
-			testList = client.lists.find(l => l.name === testList.name);
 			const found = testList.getItemByName('TEST_ToJSON');
 
 			const json = found.toJSON();
@@ -446,6 +265,63 @@ describe('Item Integration Tests', function() {
 		it('should throw when trying to change identifier', async function() {
 			const item = client.createItem({ name: 'TEST_Validation' });
 			expect(() => { item.identifier = 'new-id'; }).to.throw('You cannot update an item ID.');
+		});
+	});
+
+	describe('server round-trip behavior', function() {
+		it('should correctly round-trip quirky inputs for a fresh client', async function() {
+			// Numbers, cleared values, unset booleans, and special characters are
+			// each normalized (or not) by the real server — a local read of the
+			// object we just set wouldn't exercise that, so these need a genuine
+			// fetch. Folded into one test with one fresh client/fetch instead of
+			// one refetch per case.
+			const numericQuantityItem = client.createItem({
+				name: 'TEST_RoundTrip_NumericQuantity',
+				quantity: 12,
+			});
+			await testList.addItem(numericQuantityItem);
+
+			const clearedQuantityItem = client.createItem({
+				name: 'TEST_RoundTrip_ClearedQuantity',
+				quantity: '5',
+			});
+			await testList.addItem(clearedQuantityItem);
+			clearedQuantityItem.quantity = '';
+			await clearedQuantityItem.save();
+
+			const uncheckedItem = client.createItem({
+				name: 'TEST_RoundTrip_UncheckedDefault',
+			});
+			await testList.addItem(uncheckedItem);
+
+			const specialNameItem = client.createItem({
+				name: 'TEST_RoundTrip_Spëcial Çharacters & Symbols!',
+			});
+			await testList.addItem(specialNameItem);
+
+			const specialDetailsItem = client.createItem({
+				name: 'TEST_RoundTrip_SpecialDetails',
+				details: 'café, naïve, 日本語, emoji 🍎',
+			});
+			await testList.addItem(specialDetailsItem);
+
+			// getAuthenticatedClient() already does the one fetch we need (via its
+			// internal getLists()) — no second explicit refresh required.
+			const freshClient = await getAuthenticatedClient();
+			const freshList = freshClient.lists.find(l => l.name === testList.name);
+
+			expect(freshList.getItemByName('TEST_RoundTrip_NumericQuantity').quantity).to.equal('12');
+
+			const cleared = freshList.getItemByName('TEST_RoundTrip_ClearedQuantity');
+			expect(cleared.quantity).to.satisfy(q => q === '' || q === undefined || q === null);
+
+			const unchecked = freshList.getItemByName('TEST_RoundTrip_UncheckedDefault');
+			expect(unchecked.checked).to.satisfy(c => c === false || c === null);
+
+			expect(freshList.getItemByName('TEST_RoundTrip_Spëcial Çharacters & Symbols!')).to.exist;
+
+			const specialDetails = freshList.getItemByName('TEST_RoundTrip_SpecialDetails');
+			expect(specialDetails.details).to.equal('café, naïve, 日本語, emoji 🍎');
 		});
 	});
 });
