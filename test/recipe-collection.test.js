@@ -90,4 +90,45 @@ describe('RecipeCollection Integration Tests', function() {
 			expect(client.recipeCollections.find(c => c.name === name)).to.be.undefined;
 		});
 	});
+
+	describe('cache contract', function() {
+		it('should reflect create/membership/delete in cached reads without extra fetches', async function() {
+			const original = client._getUserData.bind(client);
+			let refreshes = 0;
+			client._getUserData = async refresh => {
+				if (refresh) refreshes++;
+				return original(refresh);
+			};
+
+			try {
+				const collectionName = `TEST_Collection_${Date.now()}`;
+				const collection = await client.createRecipeCollection({ name: collectionName });
+				await collection.save(); // may include the one-time warm-up fetch
+
+				let found = (await client.getRecipeCollections(false)).find(c => c.identifier === collection.identifier);
+				expect(found).to.exist;
+
+				const recipeName = `TEST_Recipe_${Date.now()}`;
+				const recipe = await client.createRecipe({ name: recipeName });
+				await recipe.save();
+
+				await collection.addRecipe(recipe.identifier);
+				found = (await client.getRecipeCollections(false)).find(c => c.identifier === collection.identifier);
+				expect(found.recipeIds).to.include(recipe.identifier);
+
+				await collection.removeRecipe(recipe.identifier);
+				found = (await client.getRecipeCollections(false)).find(c => c.identifier === collection.identifier);
+				expect(found.recipeIds).to.not.include(recipe.identifier);
+
+				await recipe.delete();
+				await collection.delete();
+				found = (await client.getRecipeCollections(false)).find(c => c.identifier === collection.identifier);
+				expect(found).to.be.undefined;
+
+				expect(refreshes).to.be.at.most(1);
+			} finally {
+				client._getUserData = original;
+			}
+		});
+	});
 });
