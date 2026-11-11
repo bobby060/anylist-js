@@ -8,11 +8,19 @@ describe('Recipe Integration Tests', function() {
 
 	before(async function() {
 		client = await getAuthenticatedClient();
+
+		// One-time sweep for orphaned fixtures left by a previous crashed run.
+		// Free — getAuthenticatedClient() already fetched the full account via getLists().
+		const orphans = (await client.getRecipes(false)).filter(r =>
+			r.name && r.name.startsWith('TEST_Recipe_')
+		);
+		for (const recipe of orphans) {
+			await recipe.delete();
+		}
 	});
 
 	afterEach(async function() {
-		// Clean up: remove any test recipes we created
-		await client.getRecipes(true);
+		// client.recipes is kept correct by save()/delete() — no refetch needed to clean up.
 		const testRecipes = client.recipes.filter(r =>
 			r.name && r.name.startsWith('TEST_Recipe_')
 		);
@@ -27,7 +35,6 @@ describe('Recipe Integration Tests', function() {
 			const recipe = await client.createRecipe({ name });
 			await recipe.save();
 
-			// No refreshCache arg — must come from the local cache save() just updated
 			const recipes = await client.getRecipes(false);
 			const found = recipes.find(r => r.identifier === recipe.identifier);
 
@@ -97,7 +104,7 @@ describe('Recipe Integration Tests', function() {
 	});
 
 	describe('cache contract', function() {
-		it('should not trigger additional full-account fetches after the initial warm-up', async function() {
+		it('should not trigger any full-account fetch after the initial warm-up', async function() {
 			const original = client._getUserData.bind(client);
 			let refreshes = 0;
 			client._getUserData = async refresh => {
@@ -108,7 +115,7 @@ describe('Recipe Integration Tests', function() {
 			try {
 				const name = `TEST_Recipe_${Date.now()}`;
 				const recipe = await client.createRecipe({ name });
-				await recipe.save(); // may include the one-time warm-up fetch
+				await recipe.save();
 
 				await client.getRecipes(false);
 
@@ -121,7 +128,9 @@ describe('Recipe Integration Tests', function() {
 
 				await client.getRecipes(false);
 
-				expect(refreshes).to.be.at.most(1);
+				// By this point in the suite the cache is already warm, so this whole
+				// create/update/delete/read sequence should cost zero network calls.
+				expect(refreshes).to.equal(0);
 			} finally {
 				client._getUserData = original;
 			}

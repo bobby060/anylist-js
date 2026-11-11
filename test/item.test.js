@@ -12,13 +12,19 @@ describe('Item Integration Tests', function() {
 	before(async function() {
 		client = await getAuthenticatedClient();
 		testList = await getTestList(client);
+
+		// One-time sweep for orphaned fixtures left by a previous crashed run.
+		// Free — getAuthenticatedClient() already fetched the full account via getLists().
+		const orphans = testList.items.filter(i => i.name && i.name.startsWith('TEST_'));
+		for (const item of orphans) {
+			await testList.removeItem(item);
+		}
 	});
 
 	afterEach(async function() {
-		// Clean up: remove any test items we created
-		await client.getLists(); // Refresh
-		testList = client.lists.find(l => l.name === testList.name);
-
+		// testList already reflects this test's latest state — each test refreshes it
+		// itself as part of verifying persistence, so no extra refetch is needed here
+		// just to find what to clean up. removeItem() keeps testList.items in sync.
 		const testItems = testList.items.filter(i =>
 			i.name && i.name.startsWith('TEST_')
 		);

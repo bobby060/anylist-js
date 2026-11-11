@@ -11,11 +11,19 @@ describe('MealPlanningCalendarEvent Integration Tests', function() {
 
 	before(async function() {
 		client = await getAuthenticatedClient();
+
+		// One-time sweep for orphaned fixtures left by a previous crashed run.
+		// Free — getAuthenticatedClient() already fetched the full account via getLists().
+		const orphans = (await client.getMealPlanningCalendarEvents(false)).filter(e =>
+			e.title && e.title.startsWith('TEST_Event_')
+		);
+		for (const event of orphans) {
+			await event.delete();
+		}
 	});
 
 	afterEach(async function() {
-		// Clean up: remove any test events we created
-		await client.getMealPlanningCalendarEvents(true);
+		// client.mealPlanningCalendarEvents is kept correct by save()/delete() — no refetch needed.
 		const testEvents = client.mealPlanningCalendarEvents.filter(e =>
 			e.title && e.title.startsWith('TEST_Event_')
 		);
@@ -35,6 +43,18 @@ describe('MealPlanningCalendarEvent Integration Tests', function() {
 
 			expect(found).to.exist;
 			expect(found.title).to.equal(title);
+		});
+
+		it('should persist the new event for a fresh client', async function() {
+			const title = `TEST_Event_${Date.now()}`;
+			const event = await client.createEvent({ title, date: TEST_DATE });
+			await event.save();
+
+			const freshClient = await getAuthenticatedClient();
+			await freshClient.getMealPlanningCalendarEvents(true);
+			const found = freshClient.mealPlanningCalendarEvents.find(e => e.title === title);
+
+			expect(found).to.exist;
 		});
 	});
 
@@ -68,7 +88,7 @@ describe('MealPlanningCalendarEvent Integration Tests', function() {
 	});
 
 	describe('cache contract', function() {
-		it('should not trigger additional full-account fetches after the initial warm-up', async function() {
+		it('should not trigger any full-account fetch after the initial warm-up', async function() {
 			const original = client._getUserData.bind(client);
 			let refreshes = 0;
 			client._getUserData = async refresh => {
@@ -79,7 +99,7 @@ describe('MealPlanningCalendarEvent Integration Tests', function() {
 			try {
 				const title = `TEST_Event_${Date.now()}`;
 				const event = await client.createEvent({ title, date: TEST_DATE });
-				await event.save(); // may include the one-time warm-up fetch
+				await event.save();
 
 				await client.getMealPlanningCalendarEvents(false);
 
@@ -92,7 +112,9 @@ describe('MealPlanningCalendarEvent Integration Tests', function() {
 
 				await client.getMealPlanningCalendarEvents(false);
 
-				expect(refreshes).to.be.at.most(1);
+				// By this point in the suite the cache is already warm, so this whole
+				// create/update/delete/read sequence should cost zero network calls.
+				expect(refreshes).to.equal(0);
 			} finally {
 				client._getUserData = original;
 			}
