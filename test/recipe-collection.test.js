@@ -88,6 +88,25 @@ describe('RecipeCollection Integration Tests', function() {
 			found = (await client.getRecipeCollections(false)).find(c => c.identifier === collection.identifier);
 			expect(found.recipeIds).to.not.include(recipe.identifier);
 		});
+
+		it('should keep the other recipes when removing one, for a fresh client', async function() {
+			const collection = await client.createRecipeCollection({ name: `TEST_Collection_${Date.now()}` });
+			await collection.save();
+
+			const keep = await client.createRecipe({ name: `TEST_Recipe_keep_${Date.now()}` });
+			await keep.save();
+			const drop = await client.createRecipe({ name: `TEST_Recipe_drop_${Date.now()}` });
+			await drop.save();
+
+			await collection.addRecipe(keep.identifier);
+			await collection.addRecipe(drop.identifier);
+			await collection.removeRecipe(drop.identifier);
+
+			const freshClient = await getAuthenticatedClient();
+			const found = (await freshClient.getRecipeCollections(true)).find(c => c.identifier === collection.identifier);
+			expect(found.recipeIds).to.include(keep.identifier);
+			expect(found.recipeIds).to.not.include(drop.identifier);
+		});
 	});
 
 	describe('deleting collections', function() {
