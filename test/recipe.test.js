@@ -53,6 +53,17 @@ describe('Recipe Integration Tests', function() {
 
 			expect(found).to.exist;
 		});
+
+		it('should return existing recipes from a fresh client\'s first cached read', async function() {
+			const name = `TEST_Recipe_${Date.now()}`;
+			const recipe = await client.createRecipe({ name });
+			await recipe.save();
+
+			const freshClient = await getAuthenticatedClient();
+			const recipes = await freshClient.getRecipes(false);
+
+			expect(recipes.find(r => r.name === name)).to.exist;
+		});
 	});
 
 	describe('updating recipes', function() {
